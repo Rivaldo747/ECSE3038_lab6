@@ -1,49 +1,60 @@
-from flask import Flask, jsonify
-import requests
+from pickle import APPEND
+from fastapi import FastAPI,Request
+from fastapi import FastAPI, HTTPException
+from bson import ObjectId
+from fastapi.middleware.cors import CORSMiddleware
+import motor.motor_asyncio
+import pydantic
 import datetime
 
-app = Flask(__name__)
+app= FastAPI()
 
-# Define the route for the GET request handler
-@app.route('/status', methods=['GET'])
-def get_status():
-    # Retrieve the current temperature from the database
-    temperature = get_current_temperature()
+origins=[
+   
+]
 
-    # Determine whether the fan should be on or off based on the temperature threshold
-    fan = True if temperature >= 28.0 else False
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    # Retrieve the sunset time for the current day using an API
-    sunset_time = get_sunset_time()
+client=motor.motor_asyncio.AsyncIOMotorClient("mongodb+srv://Rivbot:ZImDfWoUlYlRUjKh@cluster0.oinoodt.mongodb.net/?retryWrites=true&w=majority")
+pydantic.json.ENCODERS_BY_TYPE[ObjectId]=str
+@app.get("/api/state")
+async def get_state():
+  state = await db["data"].info({"": "mon"})
 
-    # Determine whether the light should be on or off based on the current time and sunset time
-    current_time = datetime.datetime.now()
-    light = True if current_time > sunset_time else False
+  if state == None:
+    return {"fan": False, "light": False}
+  return state
 
-    # Create a JSON response object with the appropriate values for the fan and light attributes
-    response = {
-        'fan': fan,
-        'light': light
-    }
 
-    return jsonify(response)
 
-# Helper function to retrieve the current temperature from the database
-def get_current_temperature():
-    # Implement database logic here
-    temperature = 27.0 # For demonstration purposes only
-    return temperature
+@app.put("/api/state")
+async def capture(request: Request): 
+  
+  update = await request.json()
 
-# Helper function to retrieve the sunset time for the current day using an API
-def get_sunset_time():
-    # Use the sunrise-sunset.org API to retrieve the sunset time for the current day
-    url = 'https://api.sunrise-sunset.org/json?lat=37.7749&lng=-122.4194&date=today'
-    response = requests.get(url)
+  sunset = requests.get('https://ecse-sunset-api.onrender.com/api/sunset').json()
+  response = requests.get(url)
     data = response.json()
     sunset_time_str = data['results']['sunset']
-    sunset_time = datetime.datetime.strptime(sunset_time_str, '%I:%M:%S %p')
+    sunset_time = datetime.strptime(sunset_time_str, '%I:%M:%S %p')
     return sunset_time
 
-if __name__ == '__main__':
-    app.run()
-
+  update["light"] = (datetime1<datetime2)
+  update["fan"] = (float(update["temperature"]) >= 28.0) 
+ find = await db["data"].find_one({"poke": "mon"})
+   find = await db["data"].find_one({"poke": "mon"})
+  
+  if find:
+    await db["data"].update_one(({"poke": "mon"}), {"$set": update})
+    find = await db["data"].find_one({"poke": "mon"})
+    return find,204
+  else:
+    await db["data"].insert_one({**update, "poke": "mon"})
+    find = await db["data"].find_one({"poke": "mon"})
+    return find,204
