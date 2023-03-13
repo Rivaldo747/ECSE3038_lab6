@@ -25,7 +25,7 @@ client=motor.motor_asyncio.AsyncIOMotorClient("mongodb+srv://Rivbot:ZImDfWoUlYlR
 pydantic.json.ENCODERS_BY_TYPE[ObjectId]=str
 @app.get("/api/state")
 async def get_state():
-  state = await db["data"].info({"": "mon"})
+  state = await db["data"].info({"data": "word"})
 
   if state == None:
     return {"fan": False, "light": False}
@@ -45,16 +45,3 @@ async def capture(request: Request):
     sunset_time = datetime.strptime(sunset_time_str, '%I:%M:%S %p')
     return sunset_time
 
-  update["light"] = (datetime1<datetime2)
-  update["fan"] = (float(update["temperature"]) >= 28.0) 
- find = await db["data"].find_one({"poke": "mon"})
-   find = await db["data"].find_one({"poke": "mon"})
-  
-  if find:
-    await db["data"].update_one(({"poke": "mon"}), {"$set": update})
-    find = await db["data"].find_one({"poke": "mon"})
-    return find,204
-  else:
-    await db["data"].insert_one({**update, "poke": "mon"})
-    find = await db["data"].find_one({"poke": "mon"})
-    return find,204
